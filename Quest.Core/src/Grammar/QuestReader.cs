@@ -55,9 +55,9 @@ namespace Quest.Core.Grammar
         {
             this.questQuery = questQuery.TrimStart().TrimEnd();
             this.len = questQuery.Length;
-            QuestTokens = Parse();
+            QuestTokens = parse();
         }
-        public List<object> Parse()
+        private List<object> parse()
         {
             if (!questQuery.StartsWith('{') || !questQuery.EndsWith('}'))
             {
@@ -125,11 +125,11 @@ namespace Quest.Core.Grammar
                     case '{':
                         if (questToken.Key == null)
                         {
-                            questTokens.Add(Parse());
+                            questTokens.Add(parse());
                         }
                         else
                         {
-                            questToken.Value = Parse();
+                            questToken.Value = parse();
                             buffer.Clear();
                             questTokens.Add(questToken);
                         }
@@ -177,7 +177,7 @@ namespace Quest.Core.Grammar
             }
             return questTokens;
         }
-        public string readString()
+        private string readString()
         {
             StringBuilder buffer = new StringBuilder();
             bool skipNext = false;
