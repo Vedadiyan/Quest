@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Quest.Core.Grammar
 {
@@ -49,10 +50,12 @@ namespace Quest.Core.Grammar
         private readonly string questQuery;
         private int index = 0;
         private int len;
+        public List<object> QuestTokens { get; }
         public QuestReader(string questQuery)
         {
             this.questQuery = questQuery.TrimStart().TrimEnd();
             this.len = questQuery.Length;
+            QuestTokens = Parse();
         }
         public List<object> Parse()
         {
@@ -79,7 +82,7 @@ namespace Quest.Core.Grammar
                         {
                             questTokens.Add(Convert.ToDecimal(buffer.ToString()));
                         }
-                        else if(buffer.Length > 0)
+                        else if (buffer.Length > 0)
                         {
                             if (char.IsDigit(buffer[0]))
                             {
@@ -172,7 +175,7 @@ namespace Quest.Core.Grammar
                         break;
                 }
             }
-            throw new System.Exception("Badly Formatted Quest Query");
+            return questTokens;
         }
         public string readString()
         {
@@ -206,6 +209,182 @@ namespace Quest.Core.Grammar
                 }
             }
             throw new System.Exception("Badly Formatted String Value");
+        }
+        public bool Eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = false)
+        {
+            bool result = true;
+            foreach (var token in _QuestTokens ?? QuestTokens)
+            {
+                if (token is QuestToken questToken)
+                {
+                    switch (questToken.Key)
+                    {
+                        case Tokens.AND_ALSO:
+                            {
+                                result &= Eval<T>(value, (List<object>)questToken.Value, true);
+                                break;
+                            }
+                        case Tokens.OR_ELSE:
+                            {
+                                result = false;
+                                result |= Eval<T>(value, (List<object>)questToken.Value);
+                                break;
+                            }
+                        default:
+                            {
+                                if (isAnd)
+                                {
+                                    result &= eval<T>(value, questToken);
+                                }
+                                else
+                                {
+                                    result = false;
+                                    result |= eval<T>(value, questToken);
+                                    if (result)
+                                    {
+                                        return result;
+                                    }
+                                }
+                                break;
+                            }
+                    }
+                }
+                else if (token is List<object> tokens)
+                {
+                    if (isAnd)
+                    {
+                        result &= Eval<T>(value, tokens, isAnd);
+                    }
+                    else
+                    {
+                        result = false;
+                        result |= Eval<T>(value, tokens, isAnd);
+                        if (result)
+                        {
+                            return result;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        private bool eval<T>(T value, QuestToken questToken)
+        {
+            bool result = true;
+            switch (questToken.Key)
+            {
+                case Tokens.IN:
+                    {
+                        result = false;
+                        foreach (var innerExp in (List<object>)questToken.Value)
+                        {
+                            if (innerExp is QuestToken _questToken)
+                            {
+                                result |= eval<T>(value, _questToken);
+                            }
+                            else
+                            {
+                                if (innerExp is string)
+                                {
+                                    result |= value.ToString().Equals(innerExp);
+                                }
+                                else
+                                {
+                                    if (value is decimal d)
+                                    {
+                                        result |= (decimal)innerExp == d;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                case Tokens.NOT_IN:
+                    {
+                        result = true;
+                        foreach (var innerExp in (List<object>)questToken.Value)
+                        {
+                            if (innerExp is QuestToken _questToken)
+                            {
+                                result &= eval<T>(value, _questToken);
+                            }
+                            else
+                            {
+                                if (innerExp is string)
+                                {
+                                    result &= !value.ToString().Equals(innerExp);
+                                }
+                                else
+                                {
+                                    if (value is decimal d)
+                                    {
+                                        result &= (decimal)innerExp != d;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                case Tokens.GREATER_THAN:
+                    {
+                        if (value is decimal d)
+                        {
+                            result = ((decimal)questToken.Value > d);
+                        }
+                        break;
+                    }
+                case Tokens.GREATER_THAN_EQUAL:
+                    {
+                        if (value is decimal d)
+                        {
+                            result = ((decimal)questToken.Value >= d);
+                        }
+                        break;
+                    }
+                case Tokens.LOWER_THAN_EQUAL:
+                    {
+                        if (value is decimal d)
+                        {
+                            result = ((decimal)questToken.Value <= d);
+                        }
+                        break;
+                    }
+                case Tokens.NOT_EQUAL:
+                    {
+                        if (value is decimal d)
+                        {
+                            result = ((decimal)questToken.Value != d);
+                        }
+                        else if (value is string str)
+                        {
+                            result = !questToken.Value.ToString().Equals(str);
+                        }
+                        break;
+                    }
+                case Tokens.EQUAL:
+                    {
+                        if (value is decimal d)
+                        {
+                            result = ((decimal)questToken.Value != d);
+                        }
+                        else if (value is string str)
+                        {
+                            result = questToken.Value.ToString().Equals(str);
+                        }
+                        break;
+                    }
+                case Tokens.PATTERN:
+                    {
+                        if (value is string str)
+                        {
+                            Regex regex = new Regex(questToken.Value.ToString());
+                            result = regex.IsMatch(value.ToString());
+                        }
+                        break;
+                    }
+
+            }
+            return result;
         }
     }
 }
