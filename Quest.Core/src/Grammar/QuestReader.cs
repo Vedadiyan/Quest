@@ -57,7 +57,8 @@ namespace Quest.Core.Grammar
             this.len = questQuery.Length;
             QuestTokens = parse();
         }
-        public bool Eval<T>(T value) {
+        public bool Eval<T>(T value)
+        {
             return eval(value);
         }
         private List<object> parse()
@@ -273,6 +274,7 @@ namespace Quest.Core.Grammar
         }
         private bool eval<T>(T value, QuestToken questToken)
         {
+            int typeCode = (int)Type.GetTypeCode(typeof(T));
             bool result = true;
             switch (questToken.Key)
             {
@@ -293,9 +295,9 @@ namespace Quest.Core.Grammar
                                 }
                                 else
                                 {
-                                    if (value is decimal d)
+                                    if (typeCode >= 5 && typeCode <= 15)
                                     {
-                                        result |= (decimal)innerExp == d;
+                                        result |= (decimal)innerExp == Convert.ToDecimal(value);
                                     }
                                 }
                             }
@@ -319,9 +321,9 @@ namespace Quest.Core.Grammar
                                 }
                                 else
                                 {
-                                    if (value is decimal d)
+                                    if (typeCode >= 5 && typeCode <= 15)
                                     {
-                                        result &= (decimal)innerExp != d;
+                                        result &= (decimal)innerExp != Convert.ToDecimal(value);
                                     }
                                 }
                             }
@@ -330,33 +332,33 @@ namespace Quest.Core.Grammar
                     }
                 case Tokens.GREATER_THAN:
                     {
-                        if (value is decimal d)
+                        if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value > d);
+                            result = ((decimal)questToken.Value > Convert.ToDecimal(value));
                         }
                         break;
                     }
                 case Tokens.GREATER_THAN_EQUAL:
                     {
-                        if (value is decimal d)
+                        if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value >= d);
+                            result = ((decimal)questToken.Value >= Convert.ToDecimal(value));
                         }
                         break;
                     }
                 case Tokens.LOWER_THAN_EQUAL:
                     {
-                        if (value is decimal d)
+                        if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value <= d);
+                            result = ((decimal)questToken.Value <= Convert.ToDecimal(value));
                         }
                         break;
                     }
                 case Tokens.NOT_EQUAL:
                     {
-                        if (value is decimal d)
+                        if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value != d);
+                            result = ((decimal)questToken.Value != Convert.ToDecimal(value));
                         }
                         else if (value is string str)
                         {
@@ -366,9 +368,9 @@ namespace Quest.Core.Grammar
                     }
                 case Tokens.EQUAL:
                     {
-                        if (value is decimal d)
+                        if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value != d);
+                            result = ((decimal)questToken.Value != Convert.ToDecimal(value));
                         }
                         else if (value is string str)
                         {

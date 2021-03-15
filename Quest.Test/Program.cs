@@ -6,8 +6,8 @@ namespace Quest.Test
     {
         static void Main(string[] args)
         {
-            Quest.Core.Grammar.QuestReader questReader = new Core.Grammar.QuestReader("{ or: [{in: ['Hello', 'efg', '1Hello' ] }, {eq: 'Hello22'}]}");
-            var z = questReader.Eval<string>("Hello");
+            Quest.Core.Grammar.QuestReader questReader = new Core.Grammar.QuestReader("{ and: [{gt: 8},{not: 10}] }");
+            var z = questReader.Eval<int>(9);
             Console.WriteLine("Hello World!");
         }
     }
