@@ -57,6 +57,9 @@ namespace Quest.Core.Grammar
             this.len = questQuery.Length;
             QuestTokens = parse();
         }
+        public bool Eval<T>(T value) {
+            return eval(value);
+        }
         private List<object> parse()
         {
             if (!questQuery.StartsWith('{') || !questQuery.EndsWith('}'))
@@ -210,7 +213,7 @@ namespace Quest.Core.Grammar
             }
             throw new System.Exception("Badly Formatted String Value");
         }
-        public bool Eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = false)
+        private bool eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = false)
         {
             bool result = true;
             foreach (var token in _QuestTokens ?? QuestTokens)
@@ -221,13 +224,13 @@ namespace Quest.Core.Grammar
                     {
                         case Tokens.AND_ALSO:
                             {
-                                result &= Eval<T>(value, (List<object>)questToken.Value, true);
+                                result &= eval<T>(value, (List<object>)questToken.Value, true);
                                 break;
                             }
                         case Tokens.OR_ELSE:
                             {
                                 result = false;
-                                result |= Eval<T>(value, (List<object>)questToken.Value);
+                                result |= eval<T>(value, (List<object>)questToken.Value);
                                 break;
                             }
                         default:
@@ -253,12 +256,12 @@ namespace Quest.Core.Grammar
                 {
                     if (isAnd)
                     {
-                        result &= Eval<T>(value, tokens, isAnd);
+                        result &= eval<T>(value, tokens, isAnd);
                     }
                     else
                     {
                         result = false;
-                        result |= Eval<T>(value, tokens, isAnd);
+                        result |= eval<T>(value, tokens, isAnd);
                         if (result)
                         {
                             return result;
