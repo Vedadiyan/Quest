@@ -16,7 +16,7 @@ namespace Quest.Core.Grammar
                 {
                     return null;
                 }
-                switch (key)
+                switch (key.TrimStart().TrimEnd())
                 {
                     case "and":
                         return Tokens.AND_ALSO;
@@ -226,12 +226,28 @@ namespace Quest.Core.Grammar
                         case Tokens.AND_ALSO:
                             {
                                 result &= eval(value, (List<object>)questToken.Value, true);
+                                if (!isAnd && result)
+                                {
+                                    return result;
+                                }
+                                else if (isAnd && !result)
+                                {
+                                    return result;
+                                }
                                 break;
                             }
                         case Tokens.OR_ELSE:
                             {
                                 result = false;
                                 result |= eval(value, (List<object>)questToken.Value, false);
+                                if (!isAnd && result)
+                                {
+                                    return result;
+                                }
+                                else if (isAnd && !result)
+                                {
+                                    return result;
+                                }
                                 break;
                             }
                         default:
@@ -239,6 +255,10 @@ namespace Quest.Core.Grammar
                                 if (isAnd)
                                 {
                                     result &= eval(value, questToken);
+                                    if (!result)
+                                    {
+                                        return result;
+                                    }
                                 }
                                 else
                                 {
@@ -258,6 +278,10 @@ namespace Quest.Core.Grammar
                     if (isAnd)
                     {
                         result &= eval(value, tokens, isAnd);
+                        if (!result)
+                        {
+                            return result;
+                        }
                     }
                     else
                     {
@@ -293,7 +317,7 @@ namespace Quest.Core.Grammar
                                 {
                                     result |= value.ToString().Equals(innerExp);
                                 }
-                                else
+                                else if (!(innerExp is List<object> ls))
                                 {
                                     if (typeCode >= 5 && typeCode <= 15)
                                     {
@@ -303,6 +327,10 @@ namespace Quest.Core.Grammar
                                     {
                                         result |= DateTime.Parse(innerExp.ToString()) == (DateTime)value;
                                     }
+                                }
+                                else
+                                {
+                                    result |= eval(value, ls, false);
                                 }
                             }
                         }
@@ -406,7 +434,7 @@ namespace Quest.Core.Grammar
                     {
                         if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value != Convert.ToDecimal(value));
+                            result = ((decimal)questToken.Value == Convert.ToDecimal(value));
                         }
                         else if (value is string str)
                         {
