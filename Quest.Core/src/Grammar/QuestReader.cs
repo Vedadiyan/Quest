@@ -57,7 +57,7 @@ namespace Quest.Core.Grammar
             this.len = questQuery.Length;
             QuestTokens = parse();
         }
-        public bool Eval<T>(T value)
+        public bool Eval(object value)
         {
             return eval(value);
         }
@@ -214,7 +214,7 @@ namespace Quest.Core.Grammar
             }
             throw new System.Exception("Badly Formatted String Value");
         }
-        private bool eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = true)
+        private bool eval(object value, List<object> _QuestTokens = null, bool isAnd = true)
         {
             bool result = true;
             foreach (var token in _QuestTokens ?? QuestTokens)
@@ -225,25 +225,25 @@ namespace Quest.Core.Grammar
                     {
                         case Tokens.AND_ALSO:
                             {
-                                result &= eval<T>(value, (List<object>)questToken.Value, true);
+                                result &= eval(value, (List<object>)questToken.Value, true);
                                 break;
                             }
                         case Tokens.OR_ELSE:
                             {
                                 result = false;
-                                result |= eval<T>(value, (List<object>)questToken.Value, false);
+                                result |= eval(value, (List<object>)questToken.Value, false);
                                 break;
                             }
                         default:
                             {
                                 if (isAnd)
                                 {
-                                    result &= eval<T>(value, questToken);
+                                    result &= eval(value, questToken);
                                 }
                                 else
                                 {
                                     result = false;
-                                    result |= eval<T>(value, questToken);
+                                    result |= eval(value, questToken);
                                     if (result)
                                     {
                                         return result;
@@ -257,12 +257,12 @@ namespace Quest.Core.Grammar
                 {
                     if (isAnd)
                     {
-                        result &= eval<T>(value, tokens, isAnd);
+                        result &= eval(value, tokens, isAnd);
                     }
                     else
                     {
                         result = false;
-                        result |= eval<T>(value, tokens, isAnd);
+                        result |= eval(value, tokens, isAnd);
                         if (result)
                         {
                             return result;
@@ -272,9 +272,9 @@ namespace Quest.Core.Grammar
             }
             return result;
         }
-        private bool eval<T>(T value, QuestToken questToken)
+        private bool eval(object value, QuestToken questToken)
         {
-            int typeCode = (int)Type.GetTypeCode(typeof(T));
+            int typeCode = (int)Type.GetTypeCode(value.GetType());
             bool result = true;
             switch (questToken.Key)
             {
@@ -285,7 +285,7 @@ namespace Quest.Core.Grammar
                         {
                             if (innerExp is QuestToken _questToken)
                             {
-                                result |= eval<T>(value, _questToken);
+                                result |= eval(value, _questToken);
                             }
                             else
                             {
@@ -299,6 +299,10 @@ namespace Quest.Core.Grammar
                                     {
                                         result |= (decimal)innerExp == Convert.ToDecimal(value);
                                     }
+                                    else if (typeCode == 16)
+                                    {
+                                        result |= DateTime.Parse(innerExp.ToString()) == (DateTime)value;
+                                    }
                                 }
                             }
                         }
@@ -311,7 +315,7 @@ namespace Quest.Core.Grammar
                         {
                             if (innerExp is QuestToken _questToken)
                             {
-                                result &= eval<T>(value, _questToken);
+                                result &= eval(value, _questToken);
                             }
                             else
                             {
@@ -325,6 +329,10 @@ namespace Quest.Core.Grammar
                                     {
                                         result &= (decimal)innerExp != Convert.ToDecimal(value);
                                     }
+                                    else if (typeCode == 16)
+                                    {
+                                        result |= DateTime.Parse(innerExp.ToString()) != (DateTime)value;
+                                    }
                                 }
                             }
                         }
@@ -334,7 +342,11 @@ namespace Quest.Core.Grammar
                     {
                         if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value > Convert.ToDecimal(value));
+                            result = ((decimal)questToken.Value < Convert.ToDecimal(value));
+                        }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) < (DateTime)value;
                         }
                         break;
                     }
@@ -342,7 +354,23 @@ namespace Quest.Core.Grammar
                     {
                         if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value >= Convert.ToDecimal(value));
+                            result = ((decimal)questToken.Value <= Convert.ToDecimal(value));
+                        }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) <= (DateTime)value;
+                        }
+                        break;
+                    }
+                case Tokens.LOWER_THAN:
+                    {
+                        if (typeCode >= 5 && typeCode <= 15)
+                        {
+                            result = ((decimal)questToken.Value > Convert.ToDecimal(value));
+                        }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) > (DateTime)value;
                         }
                         break;
                     }
@@ -350,7 +378,11 @@ namespace Quest.Core.Grammar
                     {
                         if (typeCode >= 5 && typeCode <= 15)
                         {
-                            result = ((decimal)questToken.Value <= Convert.ToDecimal(value));
+                            result = ((decimal)questToken.Value >= Convert.ToDecimal(value));
+                        }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) >= (DateTime)value;
                         }
                         break;
                     }
@@ -364,6 +396,10 @@ namespace Quest.Core.Grammar
                         {
                             result = !questToken.Value.ToString().Equals(str);
                         }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) != (DateTime)value;
+                        }
                         break;
                     }
                 case Tokens.EQUAL:
@@ -375,6 +411,10 @@ namespace Quest.Core.Grammar
                         else if (value is string str)
                         {
                             result = questToken.Value.ToString().Equals(str);
+                        }
+                        else if (typeCode == 16)
+                        {
+                            result |= DateTime.Parse(questToken.Value.ToString()) == (DateTime)value;
                         }
                         break;
                     }
