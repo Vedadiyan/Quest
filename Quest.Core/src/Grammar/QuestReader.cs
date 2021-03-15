@@ -213,7 +213,7 @@ namespace Quest.Core.Grammar
             }
             throw new System.Exception("Badly Formatted String Value");
         }
-        private bool eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = false)
+        private bool eval<T>(T value, List<object> _QuestTokens = null, bool isAnd = true)
         {
             bool result = true;
             foreach (var token in _QuestTokens ?? QuestTokens)
@@ -230,7 +230,7 @@ namespace Quest.Core.Grammar
                         case Tokens.OR_ELSE:
                             {
                                 result = false;
-                                result |= eval<T>(value, (List<object>)questToken.Value);
+                                result |= eval<T>(value, (List<object>)questToken.Value, false);
                                 break;
                             }
                         default:
