@@ -3,7 +3,7 @@
 
 ## Getting Started
 
-Quest has a JSON like syntax and supports a verity of options: 
+Quest has a JSON like syntax and supports a variety of options: 
 
 |keyword|description  | example|
 |--|--|--|
